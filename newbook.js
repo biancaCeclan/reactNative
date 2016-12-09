@@ -8,20 +8,39 @@ import {
    View,
    TextInput,
    TouchableNativeFeedback,
-   ToastAndroid
+   ToastAndroid,
+   TouchableOpacity,
+   DatePickerAndroid
 } from 'react-native';
 
 
 class NewBook extends Component {
 	constructor(props){
 		super(props);
-		this.state = {title : '', author : '', year: ''};
+		this.state = {title : '', author : '', year: 'Publication year', price: ''};
 	}
   
 	saveBook() {
-		var book = {title: this.state.title, author: this.state.author, pubYear: this.state.year}; 
+		var book = {title: this.state.title, author: this.state.author, pubYear: this.state.year, price: this.state.price}; 
 		this.props.callback(book);
 		this.props.navigator.pop();
+	};
+	
+	showPicker = async (options) => {
+		try {
+		  const {action, year} = await DatePickerAndroid.open(options);
+		  if (action === DatePickerAndroid.dismissedAction) {
+			
+		  } else {
+			var date = new Date(year, 1, 1);
+			this.setState({
+				year: year,
+			});
+		  }
+		  
+		} catch ({code, message}) {
+			ToastAndroid.show('Error: ' + message, ToastAndroid.SHORT);
+		}
 	};
   
 	render() {
@@ -29,7 +48,13 @@ class NewBook extends Component {
 			<View style={styles.container}>
 				<TextInput placeholder='Title' onChangeText={(title) => this.setState({title})} value={this.state.title} />
 				<TextInput placeholder='Author' onChangeText={(author) => this.setState({author})} value={this.state.author} />
-				<TextInput placeholder='Publication Year' onChangeText={(year) => this.setState({year})} value={this.state.year} />
+				<TouchableOpacity
+					onPress={this.showPicker.bind(this, {
+					  date: new Date(),
+					})}>
+					<Text style={styles.text}>{this.state.year}</Text>
+				</TouchableOpacity>
+				<TextInput placeholder='Price' onChangeText={(price) => this.setState({price})} value={this.state.price} />
 		 
 				<TouchableNativeFeedback
 					onPress={() => this.saveBook()}>

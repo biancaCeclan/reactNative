@@ -16,25 +16,21 @@ import {
   TouchableNativeFeedback,
   ToastAndroid,
   ScrollView,
-  Linking
+  Linking,
+  Alert
 } from 'react-native';
+import {readBook, saveBook, readAllBooks, clearAllBooks, updateBook, removeBook} from './src/Storage';
+import {Book} from './src/Book';
 
-var BOOKS_DATA = [
-  {title: 'Title1', author: 'Author1', pubYear: '2001'},
-  {title: 'Title2', author: 'Author2', pubYear: '2002'},
-  {title: 'Title3', author: 'Author3', pubYear: '2003'},
-  {title: 'Title4', author: 'Author4', pubYear: '2004'},
-  {title: 'Title5', author: 'Author5', pubYear: '2005'},
-  {title: 'Title6', author: 'Author6', pubYear: '2006'},
-  {title: 'Title7', author: 'Author7', pubYear: '2007'},
-  {title: 'Title8', author: 'Author8', pubYear: '2008'},
- ];
+var BOOKS_DATA = [];
 
 class BookList extends Component {
 	constructor(props) {
 		super(props);
 		this.callbackFunctionNew = this.callbackFunctionNew	.bind(this);
 		this.callbackFunction = this.callbackFunction.bind(this);
+		
+		this.callbackGetOne = this.callbackGetOne.bind(this);
 		this.state = {
 			dataSource: new ListView.DataSource({
 				rowHasChanged: (row1, row2) => row1 !== row2,
@@ -49,27 +45,23 @@ class BookList extends Component {
 	}
 	
 	fetchData() {
+		BOOKS_DATA = [];
+		readAllBooks(this.callbackGetOne);
 		this.setState({
-			dataSource: this.state.dataSource.cloneWithRows(BOOKS_DATA),
 			loaded: true,
         });
 	}
-	callbackFunction(args, index) {
-		var newData = BOOKS_DATA.slice();
-		newData[index] = args;
-		this.setState({
-			dataSource: this.state.dataSource.cloneWithRows(newData),
-        });
-		BOOKS_DATA = newData.slice();
+	
+	callbackFunction(args) {
+		updateBook(args);
+		BOOKS_DATA = [];
+		this.fetchData();
+		
 		ToastAndroid.show('The Book was modified', ToastAndroid.SHORT);
 	};
 	
 	callbackFunctionNew(args) {
-		BOOKS_DATA.push(args);
-		
-		this.setState({
-			dataSource: this.state.dataSource.cloneWithRows(BOOKS_DATA),
-        });
+		saveBook(args);
 		
 		ToastAndroid.show('A book was inserted', ToastAndroid.SHORT);
 	
@@ -78,7 +70,24 @@ class BookList extends Component {
 		var finalBoby = '} has been inserted.'
 		var mailURL = firstMailURL.concat(finalBoby);
 		Linking.openURL(mailURL).catch(err => console.error('An error occurred', err));
+		BOOKS_DATA = [];
+		this.fetchData();
 	}
+	
+	callbackGetOne(args) {
+		BOOKS_DATA.push(args);
+		
+		this.setState({
+			dataSource: this.state.dataSource.cloneWithRows(BOOKS_DATA),
+        });
+	}
+	
+	deleteBook(title) {
+		BOOKS_DATA = [];
+		removeBook(title);
+		this.fetchData();
+	}
+	
 	
 	render() {
 	if (!this.state.loaded) {
@@ -99,11 +108,21 @@ class BookList extends Component {
 							title: data.title, 
 							author: data.author,
 							year: data.pubYear,
-							position: BOOKS_DATA.indexOf(data),
+							price: data.price,
 							callback: this.callbackFunction,
 						},
-						}
-					)}>
+						},)
+					}
+					onLongPress={()=> Alert.alert(
+										  'Delete',
+										  'Are you sure?',
+										  [
+											{text: 'Cancel'},
+											{text: 'OK', onPress: () => this.deleteBook(data.title)},
+										  ]
+										)
+					}
+					 >
 						<View>
 							<Text style={styles.title}>{data.title}</Text>
 							<Text>{data.author}</Text>
