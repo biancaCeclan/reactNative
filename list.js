@@ -22,6 +22,8 @@ import {
 import {readBook, saveBook, readAllBooks, clearAllBooks, updateBook, removeBook} from './src/Storage';
 import {Book} from './src/Book';
 
+import Database from "./firebase/database.js";
+
 var BOOKS_DATA = [];
 
 class BookList extends Component {
@@ -44,25 +46,36 @@ class BookList extends Component {
 		this.fetchData();
 	}
 	
+	
 	fetchData() {
-		BOOKS_DATA = [];
-		readAllBooks(this.callbackGetOne);
+		if(Database.booksRef !== null) {
+			// when an object is added, changed, removed -> you get, from the Firebase SDK, the entire result set back as a DataSnapshot 
+			Database.booksRef.on('value', (snap) => {
+				// get children as an array
+				var books = [];
+				snap.forEach((child) => {
+					books.push(child.val());
+				});
+			
+				BOOKS_DATA = books.slice();
+				this.setState({
+					dataSource: this.state.dataSource.cloneWithRows(BOOKS_DATA),
+				});
+				Database.initializeBooks(books);
+			});
+		}
+		
 		this.setState({
 			loaded: true,
         });
 	}
 	
 	callbackFunction(args) {
-		updateBook(args);
-		BOOKS_DATA = [];
-		this.fetchData();
-		
 		ToastAndroid.show('The Book was modified', ToastAndroid.SHORT);
 	};
 	
 	callbackFunctionNew(args) {
-		saveBook(args);
-		
+			
 		ToastAndroid.show('A book was inserted', ToastAndroid.SHORT);
 	
 		var body = 'The book : Book{title =' + args['title'] + ', author=' + args['author'] + ', publication year=' + args['pubYear'];
@@ -70,8 +83,6 @@ class BookList extends Component {
 		var finalBoby = '} has been inserted.'
 		var mailURL = firstMailURL.concat(finalBoby);
 		Linking.openURL(mailURL).catch(err => console.error('An error occurred', err));
-		BOOKS_DATA = [];
-		this.fetchData();
 	}
 	
 	callbackGetOne(args) {
@@ -82,12 +93,9 @@ class BookList extends Component {
         });
 	}
 	
-	deleteBook(title) {
-		BOOKS_DATA = [];
-		removeBook(title);
-		this.fetchData();
+	deleteBook(uuid) {
+		Database.deleteBook(uuid);
 	}
-	
 	
 	render() {
 	if (!this.state.loaded) {
@@ -109,6 +117,7 @@ class BookList extends Component {
 							author: data.author,
 							year: data.pubYear,
 							price: data.price,
+							uuid: data.uuid,
 							callback: this.callbackFunction,
 						},
 						},)
@@ -118,7 +127,7 @@ class BookList extends Component {
 										  'Are you sure?',
 										  [
 											{text: 'Cancel'},
-											{text: 'OK', onPress: () => this.deleteBook(data.title)},
+											{text: 'OK', onPress: () => this.deleteBook(data.uuid)},
 										  ]
 										)
 					}

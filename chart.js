@@ -5,6 +5,8 @@ import { Dimensions } from 'react-native';
 
 import {readAllBooks} from './src/Storage';
 
+import Database from "./firebase/database.js";
+
 var {height, width} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
@@ -26,7 +28,6 @@ export class SimpleChart extends Component {
 	
 	constructor(props) {
 		super(props);
-		this.callbackGetOne = this.callbackGetOne.bind(this);
 	}
 	
 	componentDidMount() {
@@ -35,13 +36,15 @@ export class SimpleChart extends Component {
 	
 	getData() {
 		sth = [];
-		readAllBooks(this.callbackGetOne);
+		books = Database.getBooks();
+		if(books !== null) {
+			for (i = 0; i < books.length; i++) {
+				value = [books[i].title, books[i].price];
+				sth.push(value);
+			}
+		}
 	}
 	
-	callbackGetOne(args) {
-		value = [args.title, args.price];
-		sth.push(value);
-	}
 	
     render() {
 		const data = sth.slice();

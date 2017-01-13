@@ -13,6 +13,9 @@ import {
    DatePickerAndroid
 } from 'react-native';
 
+import Database from "./firebase/database.js";
+var uuid = require('react-native-uuid');
+
 
 class NewBook extends Component {
 	constructor(props){
@@ -21,7 +24,9 @@ class NewBook extends Component {
 	}
   
 	saveBook() {
-		var book = {title: this.state.title, author: this.state.author, pubYear: this.state.year, price: this.state.price}; 
+		var bookUuid = uuid.v4();
+		var book = {title: this.state.title, author: this.state.author, pubYear: this.state.year, price: this.state.price, uuid: bookUuid}; 
+		Database.addBook(book);
 		this.props.callback(book);
 		this.props.navigator.pop();
 	};

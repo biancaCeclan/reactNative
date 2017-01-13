@@ -15,6 +15,8 @@ import {
 import {Book} from './src/Book';
 import { SimpleChart } from './chart.js'
 
+import Database from "./firebase/database.js";
+
 class BookDetail extends Component {
 	constructor(props){
 		super(props);
@@ -22,7 +24,8 @@ class BookDetail extends Component {
 	}
   
 	editBook() {
-		var book = new Book(this.props.title, this.state.author, this.state.year, this.state.price);
+		var book = new Book(this.props.title, this.state.author, this.state.year, this.state.price, this.props.uuid);
+		Database.updateBook(book);
 		this.props.callback(book);
 		this.props.navigator.pop();
 	};
